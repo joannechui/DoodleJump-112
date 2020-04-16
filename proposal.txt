@@ -1,0 +1,31 @@
+﻿Design Proposal
+
+
+Doodle Jump is a computer adaptation of a previously very popular iPhone game, Doodle Jump. Players’ objective is to keep increasing the character’s elevation on the screen through jumping on platforms. The main obstacle is to avoid the monsters that follow the player, and colliding with the monster will result in instant death. Players can escape the monster either through shooting it or outrunning it. Powerups such as a spring jump or a jet pack allow for players to go higher, faster. 
+
+
+Because this term project is modeled after the iPhone game, many of its characteristics and game objectives are very similar. The biggest difference is the mode in which players interact with the character. On the iPhone, the doodler moves left and right through the player physically tilting the iPhone left and right. On this computer adaptation, players use arrow keys to move the doodler left and right. The original game also only had stationary monsters or monsters that just moved left to right. This version has an AI monster that jumps from platform to platform, following the player. Lastly, the original iPhone game only allows the player to have the ability to shoot upwards, while this adaptation allows the player to shoot in any direction in order to be able to shoot the AI monster. 
+
+
+Structural Plan:
+I am using the animation framework provided by the 15-112 course website to structure my code. Animations will be written using the Model-View-Controller paradigm, in which the model is controlled through revision of app attributes (doodler, monster, and platform coordinates), and is drawn in redrawAll, which is the view. 
+
+
+Algorithmic Plan:
+The trickiest parts of the game are implementing side-scrolling, and the following attribute of the AI monster. The side-scrolling has already been implemented through use of a scrollY variable, which edits the view. For the AI monster, I plan to use recursion to calculate the path of platforms in which the monster will jump to. How this will be implemented is by recursively calculating each possible path, and keeping track of the number of jumps it takes to reach the doodler. Possible paths will only include reachable platforms, which means that each platform has to be within the jump height of the monster. The path with the least number of jumps would be the most optimal path, which is what the monster will take. 
+
+
+Timeline Plan:
+Monday, April 13 - completed side-scrolling. 
+Monday, April 20 - plan to complete AI monster and movable platforms
+Thursday, April 23 - plan to complete shooting attribute, where doodler can shoot in any direction, and one other type of jump. 
+
+
+Version Control Plan: 
+I will be using GitHub to back up my code. 
+  
+
+
+
+Module List:
+Not using any additional modules
