@@ -59,10 +59,11 @@ def initPlatforms(app):
                             random.randint(0, app.height)])
 
 def generatePlatforms(app):
-    print(app.base, 'base')
+    app.base = int(app.cy - app.height)
     app.limit = int(app.base + app.scrollMargin)
     newPlatforms = random.randint(1, 4)
-    for i in range(newPlatforms):
+    # for i in range(newPlatforms):
+    while len(app.platforms) < 20:
         app.platforms.append([random.randint(0, app.width-40), 
                             random.randint(app.base, app.limit)])
     
@@ -87,9 +88,8 @@ def movePlatform(app):
     for i in app.movingPlat:
         print(app.platforms[i][0], 'before')
         if app.platforms[i][1] < app.cy + app.height: 
-            print(app.platforms[i][0], 'after')
-            app.platforms[i][0] += 5*app.direction
-            
+            velocity = random.randint(3, 6)
+            app.platforms[i][0] += velocity*app.direction
             if (app.platforms[i][0] + app.platWidth >= app.width or 
                 app.platforms[i][0] <= 1):
                 app.direction = -app.direction
@@ -97,8 +97,8 @@ def movePlatform(app):
 
 def timerFired(app):
     #app.monsterX, app.monsterY = app.prevPlat
-    if app.currentPlat != app.prevPlat:
-        app.base += int(app.scrollY)
+    # if (app.currentPlat != app.prevPlat):
+    #     app.base += int(app.scrollY)
     
     if app.cy < app.monsterY:
         diff = app.currentPlat[0] - app.monsterX
