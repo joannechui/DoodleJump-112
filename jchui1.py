@@ -51,7 +51,7 @@ def makeDoodlerVisible(app):
 #initialize platforms for the starting screen
 def initPlatforms(app):
     #starting platform
-    app.currentPlat = (170, app.height - 15)
+    app.currentPlat = [170, app.height - 15]
     app.platforms.append(app.currentPlat)
     #generate random platforms
     while (len(app.platforms) < 8):
