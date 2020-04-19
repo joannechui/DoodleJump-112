@@ -92,7 +92,7 @@ def movePlatform(app):
             
             if (app.platforms[i][0] + app.platWidth >= app.width or 
                 app.platforms[i][0] <= 1):
-                app.direction = -app.directio-=
+                app.direction = -app.direction
 
 
 def timerFired(app):
