@@ -35,6 +35,7 @@ def appStarted(app):
 
     app.monsterX = -10
     app.monsterY = -10
+    app.possiblePlat = []
     initMonster(app)
 
 
@@ -51,12 +52,12 @@ def makeDoodlerVisible(app):
 #initialize platforms for the starting screen
 def initPlatforms(app):
     #starting platform
-    app.currentPlat = [170, app.height - 15]
+    app.currentPlat = [170, app.height - 15, 'green']
     app.platforms.append(app.currentPlat)
     #generate random platforms
     while (len(app.platforms) < 8):
         app.platforms.append([random.randint(0, app.width-40), 
-                            random.randint(0, app.height)])
+                            random.randint(0, app.height), 'green'])
 
 def generatePlatforms(app):
     app.base = int(app.cy - app.height)
@@ -65,7 +66,7 @@ def generatePlatforms(app):
     # for i in range(newPlatforms):
     while len(app.platforms) < 20:
         app.platforms.append([random.randint(0, app.width-40), 
-                            random.randint(app.base, app.limit)])
+                            random.randint(app.base, app.limit), 'green'])
     
 
 def removePlatforms(app):
@@ -81,29 +82,28 @@ def selectMovingPlatforms(app):
     while len(app.movingPlat) < 3:
         platIndex = random.randint(0, len(app.platforms) - 1)
         app.movingPlat.append(platIndex)
-        # app.movingPlat.append(app.platforms.pop(platIndex))
     movePlatform(app)
 
 def movePlatform(app):
     for i in app.movingPlat:
-        print(app.platforms[i][0], 'before')
-        if app.platforms[i][1] < app.cy + app.height: 
+        if app.platforms[i][1] < app.cy + app.height:
             velocity = random.randint(3, 6)
+            app.platforms[i][2] = 'pink'
             app.platforms[i][0] += velocity*app.direction
             if (app.platforms[i][0] + app.platWidth >= app.width or 
                 app.platforms[i][0] <= 1):
                 app.direction = -app.direction
 
 
-def timerFired(app):
-    #app.monsterX, app.monsterY = app.prevPlat
-    # if (app.currentPlat != app.prevPlat):
-    #     app.base += int(app.scrollY)
-    
+def timerFired(app):   
     if app.cy < app.monsterY:
-        diff = app.currentPlat[0] - app.monsterX
-        app.monsterX += diff/app.timerDelay 
-        app.monsterY += (app.currentPlat[1] - app.monsterY)/app.timerDelay
+        nextPlatX, nextPlatY = moveToBestPlat(app)
+        diffX = nextPlatX - app.monsterX
+        diffY = nextPlatY - app.monsterY
+        app.monsterX += diffX/app.timerDelay 
+        app.monsterY += diffY/app.timerDelay
+        print('asdf')
+        # app.monsterX, app.monsterY = nextPlatX, nextPlatY
     getPlatform(app)
     makeDoodlerVisible(app)
     selectMovingPlatforms(app)
@@ -122,8 +122,6 @@ def getPlatformBounds(app, platX, platY):
 def getPlatform(app):
     app.cx += app.xv
     app.cy += app.yv
-    # app.monsterX += app.xv
-    # app.monsterY += app.yv
     app.yv += app.gravity
     doodleBounds = getDoodleBounds(app)
     for i in range(len(app.platforms)):
@@ -160,9 +158,6 @@ def moveDoodler(app, dx):
             app.cx = app.width - app.r
     elif (app.cx - app.r >= app.width):
             app.cx = app.r
-    #if app.cy < app.monsterY:
-    #monsterJump(app)
-
 
 def keyPressed(app, event):
     if (event.key == 'Left'):
@@ -187,23 +182,46 @@ def monsterJump(app):
                                         app.monsterX, app.monsterY)
         if (platY < app.monsterY and dist <= app.jumpHeight):
             app.monsterX, app.monsterY = platX, platY
-            #print(app.monsterX, app.monsterY)
 
-# def findBestPlatform(app)
-#     #find best path of platforms and add to list
+def moveToBestPlat(app):
+    app.possiblePlat = []
+    platX, platY = app.currentPlat[0], app.currentPlat[1]
+    if possibleJump(app, app.monsterX, app.monsterY,platX, platY):
+        app.monsterX, app.monsterY = platX, platY
+    i = 0
+    print('platforms', app.platforms)
+    for i in range(len(app.platforms)):
+        platX1, platY1 = app.platforms[i][0], app.platforms[i][1]
+        if possibleJump(app, app.monsterX, app.monsterY, platX1, platY1):
+            app.possiblePlat.append(app.platforms[i])
+    print('possibleplatforms', app.possiblePlat)
+    bestPlat = getBestPlat(app)
+    print('bestPlat', bestPlat)
+    return bestPlat[0], bestPlat[1]
 
-def drawMonster(app, canvas):
-    x = app.monsterX
-    y = app.monsterY - app.scrollY
-    canvas.create_oval(x - app.r, y - app.r,
-                        x + app.r, y + app.r, 
-                        fill = 'red')
-    
 
-def getDistanceBetweenPlat(app, x0, y0, x1, y1):
-    # print(x0, y0, x1, y1)
-    dist = ((x0 - x1)**2 + (y0 - y1)**2)**.5
-    return dist
+#if distance within jumpheight, return true
+def possibleJump(app, x0, y0, x1, y1):
+    yLimit = app.height // 2
+    xLimit = app.width // 2 
+    if y1 >= y0 or y1 < app.currentPlat[1]:
+        return False
+    elif (abs(y0 - y1 )<= yLimit) and (abs(x0 - x1) <= xLimit):
+        return True
+    else: 
+        return False
+
+def getBestPlat(app):
+    i = 0
+    bestDist = 0
+    bestPlat = [app.monsterX, app.monsterY]
+    for i in range(len(app.possiblePlat)):
+        platX, platY = app.possiblePlat[i][0], app.possiblePlat[i][1]
+        currDist = ((platX - app.monsterX)**2 + (platY - app.monsterY)**2)**.5
+        if (currDist > bestDist):
+            bestDist = currDist
+            bestPlat = [platX, platY]
+    return bestPlat
 
 
 #shoot bullets feature
@@ -219,6 +237,12 @@ def shoot(app):
         else:
             index += 1
 
+def drawMonster(app, canvas):
+    x = app.monsterX
+    y = app.monsterY - app.scrollY
+    canvas.create_oval(x - app.r, y - app.r,
+                        x + app.r, y + app.r, 
+                        fill = 'red')
         
 def drawBullet(app, canvas):
     r = 5
@@ -229,24 +253,14 @@ def drawBullet(app, canvas):
 def drawPlatform(app, canvas):
     for i in range(len(app.platforms)):
         platX, platY = app.platforms[i][0], app.platforms[i][1]
+        color = app.platforms[i][2]
         platY -= app.scrollY
         platRight = platX + app.platWidth
         platBottom = platY + app.platHeight
         canvas.create_rectangle(platX, platY, 
                             platRight, platBottom, 
-                            fill = 'green')
-
-# def drawMovingPlat(app, canvas):
-#     for i in range(len(app.platforms)):
-#         platX, platY = app.platforms[i][0], app.platforms[i][1]
-#         platY -= app.scrollY
-#         platRight = platX + app.platWidth
-#         platBottom = platY + app.platHeight
-#         canvas.create_rectangle(platX, platY, 
-#                             platRight, platBottom, 
-#                             fill = 'pink')
+                            fill = color)
                             
-
 
 def redrawAll(app, canvas):
     y = app.cy
