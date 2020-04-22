@@ -128,7 +128,7 @@ def timerFired(app):
         app.monsterX += diffX/app.timerDelay 
         app.monsterY += diffY/app.timerDelay
         # app.monsterX, app.monsterY = nextPlatX, nextPlatY
-    app.theta += (math.pi*app.platWidth)/app.timerDelay
+    app.theta += (math.pi)/app.timerDelay
     getPlatform(app)
     makeDoodlerVisible(app)
     selectMovingPlatforms(app)
