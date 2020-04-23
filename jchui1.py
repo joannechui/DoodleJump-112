@@ -22,7 +22,6 @@ def appStarted(app):
     app.yv = 8
     app.timerDelay = 10
     app.monsterTime = 0
-    app.bullets = []
     app.platforms = []
     app.platWidth = 60
     app.platHeight = 10
@@ -44,6 +43,10 @@ def appStarted(app):
     app.possiblePlat = []
     initMonster(app)
 
+    app.bullets = []
+    app.bulletXV = 0
+    app.bulletYV = 10
+
 
 def makeDoodlerVisible(app):
     # scroll to make player visible as needed
@@ -52,6 +55,7 @@ def makeDoodlerVisible(app):
         generatePlatforms(app)
         removePlatforms(app)
         removeRotatePlatform(app)
+        removeBullet(app)
     elif (app.cy > app.scrollY + app.height - app.scrollMargin):
         app.scrollY = app.cy - app.height + app.scrollMargin
     
@@ -156,7 +160,8 @@ def removeRotatePlatform(app):
 
 def timerFired(app):
     app.monsterTime += app.timerDelay
-    if app.cy < app.monsterY and app.monsterTime % 300 == 0:
+    if (app.cy < app.monsterY and app.monsterTime % 300 == 0 and
+        app.monsterX > 0):
         nextPlatX, nextPlatY = monsterJump(app)
         app.monsterX, app.monsterY = nextPlatX, nextPlatY
         # diffX = nextPlatX - app.monsterX
@@ -168,6 +173,8 @@ def timerFired(app):
     makeDoodlerVisible(app)
     selectMovingPlatforms(app)
     selectRotatePlatforms(app)
+    shoot(app)
+    hit(app)
 
 def getDoodleBounds(app):
     x0, y0 = app.cx - app.r, app.cy - app.r
@@ -248,7 +255,21 @@ def keyPressed(app, event):
     elif (event.key == 'Right'):
         moveDoodler(app, -5)
     elif (event.key == 'Up'):
-        shoot(app)
+        app.bulletYV = -10
+        app.bullets.append([app.cx, app.cy, 0, app.bulletYV])
+    elif (event.key == 'Down'):
+        app.bulletYV = 10
+        app.bullets.append([app.cx, app.cy, 0, app.bulletYV])
+    elif (event.key == 'a' or event.key == 'A'):
+        if (app.bulletXV > -20):
+            app.bulletXV -= 3
+            print(app.bulletXV)
+        app.bullets.append([app.cx, app.cy, app.bulletXV, app.bulletYV])
+    elif (event.key == 'd' or event.key == 'D'):
+        if (app.bulletXV < 20):
+            app.bulletXV += 3
+        app.bullets.append([app.cx, app.cy, app.bulletXV, app.bulletYV])
+
 
 def initMonster(app):
     app.monsterX, app.monsterY = getRandomPlat(app)
@@ -299,16 +320,40 @@ def getBestPlat(app):
 
 #shoot bullets feature
 def shoot(app):
-    app.bullets.append((app.cx, app.cy))
-    index = 0
-    while (index < len(app.bullets)):
-        x, y = app.bullets[index]
-        if (y > 0):
-            app.bullets.pop(index)
-            y -= 10
-            app.bullets.append((x, y))
+    for i in range(len(app.bullets)):
+        app.bullets[i][0] += app.bullets[i][2]
+        app.bullets[i][1] += app.bullets[i][3]
+    bulletBounce(app)
+
+def bulletBounce(app):
+    for i in range(len(app.bullets)):
+        if (app.bullets[i][0] >= app.width or
+            app.bullets[i][0] <= 0):
+            app.bullets[i][2] = -app.bullets[i][2]
+
+def removeBullet(app):
+    i = 0
+    while i < len(app.bullets):
+        if app.bullets[i][1] < app.base:
+            app.bullets.pop(i)
         else:
-            index += 1
+            i += 1
+
+def hit(app):
+    monsterBounds = (app.monsterX - app.r, app.monsterY - app.r,
+                        app.monsterX + app.r, app.monsterY + app.r)
+    for i in range(len(app.bullets)):
+        x, y = app.bullets[i][0], app.bullets[i][1]
+        bulletBounds = (x-5, y-5, x+5, y+5)
+        if boundsCollide(app, bulletBounds, monsterBounds):
+            app.monsterX = -100
+        #delay monster regeneration
+        if (app.monsterX == -100 and app.monsterTime % 3000 == 0):
+            index = random.randint(15, len(app.platforms)-1)
+            app.monsterX = app.platforms[index][0]
+            app.monsterY = app.platforms[index][1]
+
+            
 
 def drawMonster(app, canvas):
     x = app.monsterX
@@ -319,7 +364,9 @@ def drawMonster(app, canvas):
         
 def drawBullet(app, canvas):
     r = 5
-    for (x, y) in app.bullets:
+    for i in range(len(app.bullets)):
+        x, y = app.bullets[i][0], app.bullets[i][1]
+        y -= app.scrollY
         canvas.create_oval(x, y, x+r, y+r, fill = 'red')
 
 
@@ -331,7 +378,7 @@ def drawPlatform(app, canvas):
             platY -= app.scrollY
             platRight = platX + app.platWidth
             platBottom = platY + app.platHeight
-            canvas.create_rectangle(platX, platY, 
+            canvas.create_rectangle(platX, platY,
                                 platRight, platBottom, 
                                 fill = color)
 
