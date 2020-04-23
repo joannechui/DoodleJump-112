@@ -101,7 +101,28 @@ def removePlatforms(app):
     while i < len(app.platforms):
         platX, platY = app.platforms[i][0], app.platforms[i][1]
         if (platY >= app.cy + app.height):
+            print(app.cy + app.height, 'edge')
+            print(app.platforms[i], 'le platform')
             app.platforms.pop(i)
+            # j = 0
+            # while j < len(app.movingPlat):
+            #     if (app.movingPlat[j] < 0):
+            #         app.movingPlat.pop(j)
+            #     else:
+            #         app.movingPlat[j] -= 1
+            #         j += 1
+            # for i in range(len(app.rotatePlatIndex)):
+            #     app.rotatePlatIndex[i] += 1
+            #     print(app.rotatePlatIndex)
+        else:
+            i += 1
+
+def removeRotatePlatform(app):
+    i = 0
+    while i < len(app.rotatePlat):
+        platY = app.rotatePlat[i][1]
+        if (platY >= app.cy + app.height):
+            app.rotatePlat.pop(i)
         else:
             i += 1
 
@@ -112,28 +133,31 @@ def selectMovingPlatforms(app):
     movePlatform(app)
 
 def movePlatform(app):
+    for i in range(len(app.platforms)):
+        app.platforms[i][2] = 'green'
     for i in app.movingPlat:
-        if app.platforms[i][1] < app.cy:
-            velocity = random.randint(3, 6)
-            app.platforms[i][2] = 'pink'
-            app.platforms[i][0] += velocity*app.direction
-            if (app.platforms[i][0] + app.platWidth >= app.width or 
-                app.platforms[i][0] <= 1):
-                app.direction = -app.direction
+        # if app.platforms[i][1] < app.cy:
+        velocity = random.randint(3, 6)
+        app.platforms[i][2] = 'pink'
+        app.platforms[i][0] += velocity*app.direction
+        if (app.platforms[i][0] + app.platWidth >= app.width or 
+            app.platforms[i][0] <= 1):
+            app.direction = -app.direction
 
 
 def selectRotatePlatforms(app):
-    while len(app.rotatePlatIndex) < 3:
-        for i in range(len(app.platforms)-1):
-            if (i not in app.movingPlat and i % 3 == 0):
-                app.rotatePlatIndex.append(i)
+    while len(app.rotatePlatIndex) < 5:
+        i = random.randint(1, len(app.platforms)-1)
+        if (i not in app.movingPlat and i not in app.rotatePlatIndex):
+            app.rotatePlatIndex.append(i)
     rotatePlatform(app)
 
 def rotatePlatform(app):
     for i in app.rotatePlatIndex:
-        app.rotateCX, app.rotateCY = app.platforms[i][0], app.platforms[i][1]
-        app.lineX, app.lineY = app.rotateCX + app.platWidth, app.rotateCY
-        app.rotatePlat.append([app.rotateCX, app.rotateCY, app.lineX, app.lineY])
+        while len(app.rotatePlat) < len(app.rotatePlatIndex):
+            app.rotateCX, app.rotateCY = app.platforms[i][0], app.platforms[i][1]
+            app.lineX, app.lineY = app.rotateCX + app.platWidth, app.rotateCY
+            app.rotatePlat.append([app.rotateCX, app.rotateCY, app.lineX, app.lineY])
         getTheta(app)
 
 def getTheta(app):
@@ -149,14 +173,6 @@ def rotateCoord(app):
         app.rotatePlat[i][2] = app.rotateX + app.rotatePlat[i][0]
         app.rotatePlat[i][3] = app.rotateY + app.rotatePlat[i][1]
 
-def removeRotatePlatform(app):
-    i = 0
-    while i < len(app.rotatePlat):
-        platY = app.rotatePlat[i][1]
-        if (platY >= app.cy + app.height):
-            app.rotatePlat.pop(i)
-        else:
-            i += 1   
 
 def timerFired(app):
     app.monsterTime += app.timerDelay
