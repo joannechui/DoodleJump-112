@@ -4,6 +4,8 @@
 #citations
 #cmu_112_graphics pkg and animation framework referenced from 
 #https://www.cs.cmu.edu/~112/notes/notes-animations-part1.html
+#sidescrolling framework referenced from
+#https://www.cs.cmu.edu/~112/notes/notes-animations-part2.html
 from cmu_112_graphics import *
 import random
 import copy
@@ -83,7 +85,7 @@ def initPlatforms(app):
 def generatePlatforms(app):
     app.base = int(app.platY - app.height)
     app.limit = int(app.platY + app.scrollMargin)
-    while len(app.platforms) < 20:
+    while len(app.platforms) < 25:
         platY = random.randint(app.base, app.limit)
         platX = random.randint(0, app.width-40)
         while (app.platY - platY < 30 or 
@@ -100,22 +102,28 @@ def removePlatforms(app):
     i = 0
     while i < len(app.platforms):
         platX, platY = app.platforms[i][0], app.platforms[i][1]
-        if (platY >= app.cy + app.height):
-            print(app.cy + app.height, 'edge')
-            print(app.platforms[i], 'le platform')
+        if (platY >= app.currentPlat[1] + app.height):
+            print(i, app.platforms[i])
+            print('asdf', app.platforms)
+            print('limit', app.currentPlat[1] + app.height)
             app.platforms.pop(i)
-            # j = 0
-            # while j < len(app.movingPlat):
-            #     if (app.movingPlat[j] < 0):
-            #         app.movingPlat.pop(j)
-            #     else:
-            #         app.movingPlat[j] -= 1
-            #         j += 1
-            # for i in range(len(app.rotatePlatIndex)):
-            #     app.rotatePlatIndex[i] += 1
-            #     print(app.rotatePlatIndex)
+            j = 0
+            while j < len(app.movingPlat):
+                if (app.movingPlat[j] < 0):
+                    app.movingPlat.pop(j)
+                else:
+                    app.movingPlat[j] -= 1
+                    j += 1
+            k = 0
+            while k < len(app.rotatePlatIndex):
+                if (app.rotatePlatIndex[k] < 0):
+                    app.rotatePlatIndex.pop(k)
+                else:
+                    app.rotatePlatIndex[k] -= 1
+                    k += 1
         else:
             i += 1
+
 
 def removeRotatePlatform(app):
     i = 0
@@ -126,38 +134,25 @@ def removeRotatePlatform(app):
         else:
             i += 1
 
-def selectMovingPlatforms(app):
-    while len(app.movingPlat) < 3:
-        platIndex = random.randint(0, len(app.platforms) - 1)
-        app.movingPlat.append(platIndex)
-    movePlatform(app)
-
-def movePlatform(app):
-    for i in range(len(app.platforms)):
-        app.platforms[i][2] = 'green'
-    for i in app.movingPlat:
-        # if app.platforms[i][1] < app.cy:
-        velocity = random.randint(3, 6)
-        app.platforms[i][2] = 'pink'
-        app.platforms[i][0] += velocity*app.direction
-        if (app.platforms[i][0] + app.platWidth >= app.width or 
-            app.platforms[i][0] <= 1):
-            app.direction = -app.direction
-
-
 def selectRotatePlatforms(app):
-    while len(app.rotatePlatIndex) < 5:
+    while len(app.rotatePlatIndex) < 3:
         i = random.randint(1, len(app.platforms)-1)
-        if (i not in app.movingPlat and i not in app.rotatePlatIndex):
+        if (i not in app.movingPlat and 
+            i not in app.rotatePlatIndex and
+            app.platforms[i][1] < app.currentPlat[1] - app.jumpHeight*2):
             app.rotatePlatIndex.append(i)
     rotatePlatform(app)
 
 def rotatePlatform(app):
+    index = 0
     for i in app.rotatePlatIndex:
-        while len(app.rotatePlat) < len(app.rotatePlatIndex):
-            app.rotateCX, app.rotateCY = app.platforms[i][0], app.platforms[i][1]
-            app.lineX, app.lineY = app.rotateCX + app.platWidth, app.rotateCY
+        app.rotateCX, app.rotateCY = app.platforms[i][0], app.platforms[i][1]
+        app.lineX, app.lineY = app.rotateCX + app.platWidth, app.rotateCY
+        if len(app.rotatePlat) < len(app.rotatePlatIndex):
             app.rotatePlat.append([app.rotateCX, app.rotateCY, app.lineX, app.lineY])
+        else:
+            app.rotatePlat[index] = [app.rotateCX, app.rotateCY, app.lineX, app.lineY]
+            index += 1
         getTheta(app)
 
 def getTheta(app):
@@ -173,6 +168,24 @@ def rotateCoord(app):
         app.rotatePlat[i][2] = app.rotateX + app.rotatePlat[i][0]
         app.rotatePlat[i][3] = app.rotateY + app.rotatePlat[i][1]
 
+def selectMovingPlatforms(app):
+    while len(app.movingPlat) < 3:
+        platIndex = random.randint(0, len(app.platforms) - 1) 
+        if app.platforms[platIndex][1] < app.currentPlat[1] - app.jumpHeight*2: 
+            app.movingPlat.append(platIndex)
+    movePlatform(app)
+
+def movePlatform(app):
+    for i in range(len(app.platforms)):
+        app.platforms[i][2] = 'green'
+    for i in app.movingPlat:
+        # if app.platforms[i][1] < app.cy:
+        velocity = random.randint(3, 6)
+        app.platforms[i][2] = 'pink'
+        app.platforms[i][0] += velocity*app.direction
+        if (app.platforms[i][0] + app.platWidth >= app.width or 
+            app.platforms[i][0] <= 1):
+            app.direction = -app.direction
 
 def timerFired(app):
     app.monsterTime += app.timerDelay
@@ -413,6 +426,10 @@ def redrawAll(app, canvas):
     canvas.create_oval(app.cx - app.r, y - app.r,
                         app.cx + app.r, y + app.r, 
                         fill = 'blue')
+    g = app.currentPlat[1] + app.height/2
+    g -= app.scrollY
+    canvas.create_line(0, g, app.width, g)
+    # print(app.currentPlat[1] + app.height, 'asdfdfg')
     drawMonster(app, canvas)
     drawPlatform(app, canvas)
     drawBullet(app, canvas)
