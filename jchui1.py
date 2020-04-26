@@ -51,6 +51,7 @@ def appStarted(app):
 
 
 def makeDoodlerVisible(app):
+    print('makeDoodlerVisible')
     # scroll to make player visible as needed
     if (app.cy < app.scrollY + app.scrollMargin):
         app.scrollY = app.cy - app.scrollMargin
@@ -83,9 +84,10 @@ def initPlatforms(app):
         app.platforms.append([app.platX, app.platY, 'green'])
 
 def generatePlatforms(app):
+    print('generatePlatforms')
     app.base = int(app.platY - app.height)
     app.limit = int(app.platY + app.scrollMargin)
-    while len(app.platforms) < 25:
+    if len(app.platforms) < 25:
         platY = random.randint(app.base, app.limit)
         platX = random.randint(0, app.width-40)
         while (app.platY - platY < 30 or 
@@ -97,15 +99,13 @@ def generatePlatforms(app):
         app.platX = platX
         app.platforms.append([app.platX, app.platY, 'green'])
     
- 
+
 def removePlatforms(app):
+    print('removePlatforms')
     i = 0
     while i < len(app.platforms):
         platX, platY = app.platforms[i][0], app.platforms[i][1]
         if (platY >= app.currentPlat[1] + app.height):
-            print(i, app.platforms[i])
-            print('asdf', app.platforms)
-            print('limit', app.currentPlat[1] + app.height)
             app.platforms.pop(i)
             j = 0
             while j < len(app.movingPlat):
@@ -126,6 +126,7 @@ def removePlatforms(app):
 
 
 def removeRotatePlatform(app):
+    print('removeRotatePlatform')
     i = 0
     while i < len(app.rotatePlat):
         platY = app.rotatePlat[i][1]
@@ -135,7 +136,8 @@ def removeRotatePlatform(app):
             i += 1
 
 def selectRotatePlatforms(app):
-    while len(app.rotatePlatIndex) < 3:
+    print('selectRotatePlatforms')
+    if len(app.rotatePlatIndex) < 3:
         i = random.randint(1, len(app.platforms)-1)
         if (i not in app.movingPlat and 
             i not in app.rotatePlatIndex and
@@ -144,6 +146,7 @@ def selectRotatePlatforms(app):
     rotatePlatform(app)
 
 def rotatePlatform(app):
+    print('rotatePlatform')
     index = 0
     for i in app.rotatePlatIndex:
         app.rotateCX, app.rotateCY = app.platforms[i][0], app.platforms[i][1]
@@ -156,12 +159,14 @@ def rotatePlatform(app):
         getTheta(app)
 
 def getTheta(app):
+    print('getTheta')
     app.theta -= .5
-    if app.theta > 360:
-        app.theta - 360
+    if app.theta < -360:
+        app.theta += 360
     rotateCoord(app)
 
 def rotateCoord(app):
+    print('rotateCoord')
     for i in range(len(app.rotatePlat)):
         app.rotateX = app.platWidth * math.sin(math.radians(app.theta))
         app.rotateY = app.platWidth * math.sin(math.radians(90 - app.theta))
@@ -169,23 +174,26 @@ def rotateCoord(app):
         app.rotatePlat[i][3] = app.rotateY + app.rotatePlat[i][1]
 
 def selectMovingPlatforms(app):
-    while len(app.movingPlat) < 3:
+    print('selectMovingPlatforms')
+    if len(app.movingPlat) < 3:
         platIndex = random.randint(0, len(app.platforms) - 1) 
-        if app.platforms[platIndex][1] < app.currentPlat[1] - app.jumpHeight*2: 
+        if (platIndex not in app.rotatePlatIndex and 
+            app.platforms[platIndex][1] < app.currentPlat[1] - app.jumpHeight*2): 
             app.movingPlat.append(platIndex)
     movePlatform(app)
 
 def movePlatform(app):
+    print('movePlatform')
     for i in range(len(app.platforms)):
         app.platforms[i][2] = 'green'
     for i in app.movingPlat:
-        # if app.platforms[i][1] < app.cy:
-        velocity = random.randint(3, 6)
+        velocity = random.randint(1, 4)
         app.platforms[i][2] = 'pink'
-        app.platforms[i][0] += velocity*app.direction
+        app.platforms[i].append(1) #for direction
+        app.platforms[i][0] += velocity*app.platforms[i][3]
         if (app.platforms[i][0] + app.platWidth >= app.width or 
             app.platforms[i][0] <= 1):
-            app.direction = -app.direction
+            app.platforms[i][3] = -app.platforms[i][3]
 
 def timerFired(app):
     app.monsterTime += app.timerDelay
@@ -206,16 +214,20 @@ def timerFired(app):
     hit(app)
 
 def getDoodleBounds(app):
+    print('getDoodleBounds')
     x0, y0 = app.cx - app.r, app.cy - app.r
     x1, y1 = app.cx + app.r, app.cy + app.r
     return (x0, y0, x1, y1)
 
 def getPlatformBounds(app, platX, platY):
+    print('getPlatformBounds')
     x0, y0 = platX, platY
     x1, y1 = platX + app.platWidth, platY + app.platHeight
     return (x0, y0, x1, y1)
 
+#check if player hits rotating platform
 def getRotatePlatformBounds(app, x0, y0, x1, y1):
+    print('getRotatePlatformBounds')
     if (x1 - x0 != 0):
         m = (y1 - y0) / (x1 - x0)
     else:
@@ -226,16 +238,25 @@ def getRotatePlatformBounds(app, x0, y0, x1, y1):
     if app.yv > 0 and diff < 2:
         # app.prevPlat = app.currentPlat
         # app.currentPlat = [platX, platY]
+        if app.theta % -90 != 0:
+            angle = app.theta % -90
+            if ((app.theta > -90) or
+                (app.theta < -180 and app.theta > -270)):
+                app.xv = angle*.03
+            else:
+                app.xv = -angle*.03
         app.yv = -8
-        bounce(app)
+        bounce(app, angle)
 
 def getRotatePlatform(app):
+    print('getRotatePlatform')
     for i in range(len(app.rotatePlat)):
         x0, y0 = app.rotatePlat[i][0], app.rotatePlat[i][1]
         x1, y1 = app.rotatePlat[i][2], app.rotatePlat[i][3]
         getRotatePlatformBounds(app, x0, y0, x1, y1)
 
 def boundsCollide(app, bound1, bound2):
+    print('bpundsCollide')
     (ax0, ay0, ax1, ay1) = bound1
     (bx0, by0, bx1, by1) = bound2
     return ((ax1 >= bx0) and (bx1 >= ax0) and
@@ -244,6 +265,7 @@ def boundsCollide(app, bound1, bound2):
 
 #make the character bounce when colliding w/ a platform
 def getPlatform(app):
+    print('getPlatform')
     app.cx += app.xv
     app.cy += app.yv
     app.yv += app.gravity
@@ -257,18 +279,13 @@ def getPlatform(app):
                 app.prevPlat = app.currentPlat
                 app.currentPlat = [platX, platY]
                 app.yv = -8
+                app.xv = 0
                 bounce(app)
                 return [platX, platY]
 
-def bounce(app):
+def bounce(app, angle=0):
+    print('bounce')
     app.yv += app.gravity
-
-def newPlatformCollide(app, x, y):
-    plat = getPlatform(app)
-    if plat != app.currentPlat:
-        app.currentPlat = plat
-        return True
-    return False
 
 def moveDoodler(app, dx):
     app.cx -= dx
@@ -292,7 +309,6 @@ def keyPressed(app, event):
     elif (event.key == 'a' or event.key == 'A'):
         if (app.bulletXV > -20):
             app.bulletXV -= 3
-            print(app.bulletXV)
         app.bullets.append([app.cx, app.cy, app.bulletXV, app.bulletYV])
     elif (event.key == 'd' or event.key == 'D'):
         if (app.bulletXV < 20):
@@ -304,12 +320,14 @@ def initMonster(app):
     app.monsterX, app.monsterY = getRandomPlat(app)
 
 def getRandomPlat(app):
+    print('getRandomPlat')
     index = random.randint(0, len(app.platforms)-1)
     startX, startY = app.platforms[index][0], app.platforms[index][1]
     return (startX, startY)
 
 #change timing so it jumps regularly
 def monsterJump(app):
+    print('monsterJump')
     app.possiblePlat = []
     platX, platY = app.currentPlat[0], app.currentPlat[1]
     if possibleJump(app, app.monsterX, app.monsterY,platX, platY):
@@ -325,6 +343,7 @@ def monsterJump(app):
 
 #if distance within x and y bounds, return true
 def possibleJump(app, x0, y0, x1, y1):
+    print('possibleJump')
     yLimit = 100
     xLimit = app.width // 2 
     if y1 >= y0 or y1 < app.currentPlat[1]:
@@ -335,6 +354,7 @@ def possibleJump(app, x0, y0, x1, y1):
         return False
 
 def getBestPlat(app):
+    print('getBestPlat')
     i = 0
     bestDist = 0
     bestPlat = [app.monsterX, app.monsterY]
@@ -349,18 +369,21 @@ def getBestPlat(app):
 
 #shoot bullets feature
 def shoot(app):
+    print('shoot')
     for i in range(len(app.bullets)):
         app.bullets[i][0] += app.bullets[i][2]
         app.bullets[i][1] += app.bullets[i][3]
     bulletBounce(app)
 
 def bulletBounce(app):
+    print('bulletBounce')
     for i in range(len(app.bullets)):
         if (app.bullets[i][0] >= app.width or
             app.bullets[i][0] <= 0):
             app.bullets[i][2] = -app.bullets[i][2]
 
 def removeBullet(app):
+    print('removeBullet')
     i = 0
     while i < len(app.bullets):
         if app.bullets[i][1] < app.base:
@@ -369,6 +392,7 @@ def removeBullet(app):
             i += 1
 
 def hit(app):
+    print('hit')
     monsterBounds = (app.monsterX - app.r, app.monsterY - app.r,
                         app.monsterX + app.r, app.monsterY + app.r)
     for i in range(len(app.bullets)):
@@ -381,7 +405,6 @@ def hit(app):
             index = random.randint(15, len(app.platforms)-1)
             app.monsterX = app.platforms[index][0]
             app.monsterY = app.platforms[index][1]
-
             
 
 def drawMonster(app, canvas):
